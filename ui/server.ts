@@ -12,8 +12,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
-
 const PORT = Number(process.env.PORT ?? 4173);
 const HOST = process.env.HOST ?? '127.0.0.1';
 const SOURCE_REGION = process.env.SOURCE_REGION ?? 'us-east-1';
@@ -82,9 +80,12 @@ function json(res: ServerResponse, status: number, body: unknown): void {
 
 function fail(res: ServerResponse, err: unknown, fallback = 500): void {
   const name = err && typeof err === 'object' && 'name' in err ? String((err as { name: string }).name) : 'Error';
-  const message = err instanceof Error ? err.message : String(err);
+  const raw = err instanceof Error ? err.message : String(err);
   const status = name === 'NoSuchKey' || name === 'NotFound' ? 404 : fallback;
-  json(res, status, { error: name, message });
+  const message = /required|folder|name|large|simple|older version|backed-up|Bulk count/i.test(raw)
+    ? raw
+    : friendlyError(err);
+  json(res, status, { error: 'Error', message });
 }
 
 async function readRaw(req: IncomingMessage, limit = MAX_UPLOAD_BYTES): Promise<Buffer> {
@@ -125,8 +126,6 @@ async function stackOutput(region: string, stackName: string, outputKey: string)
 }
 
 async function loadEnv(): Promise<Env> {
-  const sts = new STSClient({ region: SOURCE_REGION });
-  await sts.send(new GetCallerIdentityCommand({}));
   return {
     source: {
       bucket: process.env.SOURCE_BUCKET ?? await stackOutput(SOURCE_REGION, SOURCE_STACK, 'SourceBucketName'),
@@ -137,6 +136,17 @@ async function loadEnv(): Promise<Env> {
       region: DEST_REGION,
     },
   };
+}
+
+function friendlyError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  if (/credential|AccessDenied|UnrecognizedClient|ExpiredToken|security token/i.test(message)) {
+    return 'Storage is not ready yet. Ask an admin to connect this desk.';
+  }
+  if (/CloudFormation|stack|Output|NoSuchBucket|NotFound/i.test(message)) {
+    return 'The main files or backup copies are not available yet.';
+  }
+  return 'Something went wrong talking to storage. Try again in a moment.';
 }
 
 function buckets(): Env {
@@ -593,12 +603,19 @@ const server = createServer(async (req, res) => {
       }
       json(res, 200, {
         ready: Boolean(env),
-        error: envError,
-        source: env?.source,
-        replica: env?.replica,
-        folders: FOLDERS,
-        defaultKey: 'app-data/scenario-test.txt',
-        rto: { overwriteMinutes: 15, deleteMinutes: 15, bulkMinutes: 60, replicaMinutes: 15 },
+        error: envError ? friendlyError(new Error(envError)) : undefined,
+        places: {
+          main: { name: 'Main files', summary: 'Where you save day-to-day work' },
+          backup: { name: 'Backup copies', summary: 'Second copy kept safely elsewhere' },
+        },
+        folders: FOLDERS.map(({ id, prefix, name, summary, retentionDays, backedUp }) => ({
+          id,
+          prefix,
+          name,
+          summary,
+          retentionDays,
+          backedUp,
+        })),
       });
       return;
     }
@@ -725,7 +742,7 @@ async function main(): Promise<void> {
     console.error(`Could not reach backup storage yet: ${envError}`);
   }
   server.listen(PORT, HOST, () => {
-    console.log(`Backup scenarios  http://${HOST}:${PORT}`);
+    console.log(`Backup desk  http://${HOST}:${PORT}`);
   });
 }
 

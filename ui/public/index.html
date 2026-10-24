@@ -250,6 +250,42 @@
       font-size: 12px;
       color: var(--ink-strong);
     }
+    .story {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      margin: 0 0 1rem;
+    }
+    .story-card {
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.75rem 0.8rem;
+    }
+    .story-card strong {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 0.3rem;
+    }
+    .story-card p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.4; }
+    .goal {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0 0 0.9rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      background: var(--source-soft);
+      color: var(--burgundy);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    @media (max-width: 980px) {
+      .story { grid-template-columns: 1fr; }
+    }
 
     .step {
       display: grid;
@@ -438,12 +474,12 @@
       <div class="mark" aria-hidden="true">B</div>
       <div>
         <h1>Backup desk</h1>
-        <p>Source, replica, and recovery checks</p>
+        <p>See how backups protect your files</p>
       </div>
     </div>
     <nav class="modes" aria-label="Workspace">
-      <button type="button" class="active" data-mode="scenarios">Scenarios</button>
-      <button type="button" data-mode="files">Files</button>
+      <button type="button" class="active" data-mode="scenarios">Try scenarios</button>
+      <button type="button" data-mode="files">Browse files</button>
     </nav>
     <div class="meta" id="meta">
       <span class="pill"><span class="dot"></span> Connecting…</span>
@@ -455,12 +491,12 @@
 
   <div id="scenario-app">
     <nav class="tabs" aria-label="Scenarios">
-      <button type="button" class="active" data-scene="copy">1. Copy<small>Replica RPO</small></button>
-      <button type="button" data-scene="overwrite">2. Overwrite<small>F1 · 15 min</small></button>
-      <button type="button" data-scene="delete">3. Delete<small>F2 · 15 min</small></button>
-      <button type="button" data-scene="bulk">4. Bulk delete<small>F3 · 1 hour</small></button>
-      <button type="button" data-scene="temp">5. Temporary<small>Not copied</small></button>
-      <button type="button" data-scene="retention">6. Retention<small>90 / 30 / 1</small></button>
+      <button type="button" class="active" data-scene="copy">1. Save a file<small>Does backup get a copy?</small></button>
+      <button type="button" data-scene="overwrite">2. Fix a bad overwrite<small>Bring the old file back</small></button>
+      <button type="button" data-scene="delete">3. Undo a delete<small>Recover one file</small></button>
+      <button type="button" data-scene="bulk">4. Undo many deletes<small>Recover a whole folder</small></button>
+      <button type="button" data-scene="temp">5. Scratch files<small>These stay temporary</small></button>
+      <button type="button" data-scene="retention">6. How long we keep copies<small>90 / 30 / 1 days</small></button>
     </nav>
     <main class="desk">
       <section class="panel" id="steps"></section>
@@ -479,52 +515,60 @@
     </section>
     <aside class="detail" id="file-detail">
       <h3>Choose a file</h3>
-      <p class="prove">Open a row to see versions, the replica copy, and restore options.</p>
+      <p class="prove">Pick a file to see older copies and restore one if you need to.</p>
     </aside>
   </div>
 
   <script>
     const SCENES = {
       copy: {
-        title: "Upload is copied",
-        prove: "Put a working file in us-east-1. The same bytes should show up in the backup bucket in us-west-2 (F4 / 15-minute RPO).",
+        title: "Save a file",
+        do: "We put a new file into Main files.",
+        expect: "A matching copy should show up under Backup copies soon after.",
         key: "app-data/scenario-test.txt",
-        original: "SCENARIO 1 — first upload.\nThis file should appear in the backup bucket.",
-        rto: "Replica should appear within 15 minutes.",
+        original: "Hello from Main files.\nBackup copies should get this same text.",
+        goal: "Goal: backup gets the same file",
       },
       overwrite: {
-        title: "Overwrite keeps the old file",
-        prove: "Replace the file. Versioning keeps the original, and restore makes those bytes current again. RTO is 15 minutes.",
+        title: "Fix a bad overwrite",
+        do: "We replace a good file with the wrong text.",
+        expect: "The old version is still kept, and we can restore it as the current file.",
         key: "app-data/scenario-test.txt",
-        original: "SCENARIO 2 — original file.\nKeep this text. The overwrite should not destroy it.",
-        overwrite: "SCENARIO 2 — overwritten file.\nThis is the bad copy. Restore should bring the original back.",
-        rto: "15 minutes",
+        original: "This is the good file.\nWe want this text back after the overwrite.",
+        overwrite: "Oops — this is the wrong file.\nRestore should undo this.",
+        goal: "Goal: undo a mistake in about 15 minutes",
       },
       delete: {
-        title: "Delete one object",
-        prove: "Delete critical/sample.txt. A delete marker hides it, but the bytes stay. Restore must finish within 15 minutes.",
+        title: "Undo a delete",
+        do: "We delete an important file.",
+        expect: "It looks gone, but we can bring the previous copy back.",
         key: "critical/sample.txt",
         original: "CRITICAL v1 — customer record CR-1001.\nThis file must remain recoverable after overwrite or delete.",
-        rto: "15 minutes",
+        goal: "Goal: recover one deleted file",
       },
       bulk: {
-        title: "Bulk delete",
-        prove: "Wipe a prefix, then restore every key. The requirement is up to 100 objects in 1 hour. This run uses 10 files under app-data/bulk-scenario/.",
+        title: "Undo many deletes",
+        do: "We create 10 files, then delete the whole group.",
+        expect: "Every file can be restored from its previous copy.",
         key: "app-data/bulk-scenario/001.txt",
         prefix: "app-data/bulk-scenario/",
         count: 10,
-        rto: "1 hour for up to 100 keys",
+        goal: "Goal: recover a wiped folder",
       },
       temp: {
-        title: "Temporary is not copied",
-        prove: "temp/ is not replicated. A new scratch file should stay only in the source bucket.",
+        title: "Scratch files stay temporary",
+        do: "We save a scratch file in Temporary.",
+        expect: "It should stay only in Main files — no backup copy.",
         key: "temp/scenario-skip.txt",
-        original: "SCENARIO — scratch file.\nThis should not appear in the backup bucket.",
+        original: "Scratch notes.\nThis should not appear under Backup copies.",
+        goal: "Goal: temporary files are not backed up",
       },
       retention: {
-        title: "Retention window",
-        prove: "critical/ keeps noncurrent versions 90 days, app-data/ 30 days, temp/ 1 day. A version older than the window is expected to expire; one inside the window must still be listed.",
+        title: "How long we keep copies",
+        do: "We check the keep-rules for Main files and Backup copies.",
+        expect: "Important files: 90 days. Working files: 30 days. Temporary: 1 day. Recent copies should still be listed.",
         key: "critical/sample.txt",
+        goal: "Goal: keep-rules match the plan",
       },
     };
 
@@ -559,11 +603,6 @@
       $("banner").hidden = !message;
       $("banner").textContent = message || "";
       $("banner").classList.toggle("ok", Boolean(ok));
-    }
-
-    function shortId(id) {
-      if (!id || id.length < 16) return id || "";
-      return `${id.slice(0, 8)}…${id.slice(-4)}`;
     }
 
     function formatWhen(value) {
@@ -608,12 +647,14 @@
     function renderMeta() {
       const s = state.status;
       if (!s?.ready) {
-        $("meta").innerHTML = `<span class="pill"><span class="dot down"></span> ${esc(s?.error || "Buckets are not ready")}</span>`;
+        $("meta").innerHTML = `<span class="pill"><span class="dot down"></span> ${esc(s?.error || "Storage is not ready")}</span>`;
         return;
       }
+      const main = s.places?.main?.name || "Main files";
+      const backup = s.places?.backup?.name || "Backup copies";
       $("meta").innerHTML = `
-        <span class="pill"><span class="dot live"></span> Source ${esc(s.source.region)}</span>
-        <span class="pill"><span class="dot live"></span> Backup ${esc(s.replica.region)}</span>
+        <span class="pill"><span class="dot live"></span> ${esc(main)}</span>
+        <span class="pill"><span class="dot live"></span> ${esc(backup)}</span>
       `;
     }
 
@@ -628,9 +669,8 @@
           <h3>${esc(folder.name)}</h3>
           <p>${esc(folder.summary)}</p>
           <div class="chips">
-            <span class="stamp ${folder.backedUp ? "source" : "missing"}">${folder.backedUp ? "Replicated" : "Source only"}</span>
-            <span class="stamp missing">${esc(String(folder.retentionDays))} day${folder.retentionDays === 1 ? "" : "s"} kept</span>
-            <span class="stamp missing">${esc(folder.prefix || folder.id + "/")}</span>
+            <span class="stamp ${folder.backedUp ? "source" : "missing"}">${folder.backedUp ? "Has a backup copy" : "No backup copy"}</span>
+            <span class="stamp missing">Kept ${esc(String(folder.retentionDays))} day${folder.retentionDays === 1 ? "" : "s"}</span>
           </div>
         </article>
       `).join("");
@@ -638,12 +678,12 @@
 
     function runLabel() {
       return {
-        copy: "Run copy test",
-        overwrite: "Run overwrite test",
-        delete: "Run delete test",
-        bulk: "Run bulk delete test",
-        temp: "Run temporary test",
-        retention: "Check retention rules",
+        copy: "Try this",
+        overwrite: "Try this",
+        delete: "Try this",
+        bulk: "Try this",
+        temp: "Try this",
+        retention: "Check keep-rules",
       }[state.scene];
     }
 
@@ -653,73 +693,74 @@
       const waiting = state.steps.some((step) => step.status === "wait");
       if (waiting) return "";
       const cls = failed ? "fail" : "pass";
-      const label = failed ? "Check did not pass" : "All steps passed";
-      const elapsed = state.startedAt ? ` in ${formatElapsed(Date.now() - state.startedAt)}` : "";
-      return `<div class="result ${cls}"><strong>${label}</strong>${esc(elapsed)}. Refresh the buckets if you want a second look.</div>`;
+      const label = failed ? "Something did not work" : "It worked";
+      const elapsed = state.startedAt ? ` · took ${formatElapsed(Date.now() - state.startedAt)}` : "";
+      return `<div class="result ${cls}"><strong>${label}</strong>${esc(elapsed)}. You can press Try this again anytime.</div>`;
     }
 
     function renderSteps() {
       const scene = sceneDef();
       let body = "";
       if (state.scene === "overwrite") {
-        body = `<label for="original">Original</label><textarea id="original">${esc(scene.original)}</textarea>
-           <label for="overwrite" style="margin-top:0.7rem">Overwrite with</label><textarea id="overwrite">${esc(scene.overwrite)}</textarea>`;
+        body = `<label for="original">Good file</label><textarea id="original">${esc(scene.original)}</textarea>
+           <label for="overwrite" style="margin-top:0.7rem">Wrong file (the overwrite)</label><textarea id="overwrite">${esc(scene.overwrite)}</textarea>`;
       } else if (state.scene === "delete" || state.scene === "copy" || state.scene === "temp") {
-        body = `<label for="original">File contents</label><textarea id="original">${esc(scene.original || "")}</textarea>`;
+        body = `<label for="original">Text to save</label><textarea id="original">${esc(scene.original || "")}</textarea>`;
       } else if (state.scene === "bulk") {
-        body = `<p class="prove">${esc(String(scene.count))} keys under <code>${esc(scene.prefix)}</code></p>`;
+        body = `<p class="prove">This demo uses ${esc(String(scene.count))} sample files in one folder.</p>`;
       } else {
-        body = `<p class="prove">Reads the live lifecycle rules and the versions still listed for the sample files.</p>`;
+        body = `<p class="prove">We look at the keep-rules and the older copies that are still listed.</p>`;
       }
 
       $("steps").innerHTML = `
         <h2>${esc(scene.title)}</h2>
-        <p class="prove">${esc(scene.prove)}</p>
-        <p class="meta-line">${scene.prefix ? `Prefix <code>${esc(scene.prefix)}</code>` : `Key <code>${esc(scene.key)}</code>`}${scene.rto ? ` · RTO ${esc(scene.rto)}` : ""}</p>
+        <div class="goal">${esc(scene.goal || "")}</div>
+        <div class="story">
+          <div class="story-card"><strong>What we do</strong><p>${esc(scene.do)}</p></div>
+          <div class="story-card"><strong>What should happen</strong><p>${esc(scene.expect)}</p></div>
+        </div>
         ${body}
         ${state.steps.map((step) => `
           <div class="step">
             <div class="rail"><div class="node ${esc(step.status || "")}"></div></div>
             <div>
-              <div class="label">Step ${esc(step.n)} · ${esc(step.label)}</div>
-              <div class="status ${esc(step.status || "")}">${esc(step.detail || "Not started")}</div>
+              <div class="label">${esc(step.n)}. ${esc(step.label)}</div>
+              <div class="status ${esc(step.status || "")}">${esc(step.detail || "Waiting…")}</div>
             </div>
           </div>
         `).join("")}
         ${resultCard()}
         <div class="actions">
           <button class="primary" id="run">${esc(runLabel())}</button>
-          <button id="refresh" type="button">Refresh buckets</button>
           <span class="clock" id="clock">${state.busy && state.startedAt ? formatElapsed(Date.now() - state.startedAt) : ""}</span>
         </div>
       `;
       $("run").onclick = () => runScene();
-      $("refresh").onclick = () => loadView();
       $("run").disabled = state.busy;
     }
 
-    function renderSide(el, title, region, side) {
+    function renderSide(el, title, subtitle, side) {
       const current = side?.current;
       const stamp = side?.removed
-        ? `<span class="stamp fail">Delete marker</span>`
+        ? `<span class="stamp fail">Deleted</span>`
         : !side?.present
-        ? `<span class="stamp missing">Not in this bucket</span>`
-        : `<span class="stamp pass">${side.versions.length} version${side.versions.length === 1 ? "" : "s"}</span>`;
+        ? `<span class="stamp missing">Empty here</span>`
+        : `<span class="stamp pass">${side.versions.length} copy${side.versions.length === 1 ? "" : "ies"}</span>`;
       el.className = `side ${el.id === "source-side" ? "source" : "backup"}`;
       el.innerHTML = `
-        <h3>${esc(title)}<small>${esc(region || "")}</small></h3>
+        <h3>${esc(title)}${subtitle ? `<small>${esc(subtitle)}</small>` : ""}</h3>
         ${stamp}
-        <div class="body">${esc(current?.text || (side?.removed ? "Removed. The bytes are still in an older version." : side?.error ? side.error : "Nothing here yet."))}</div>
-        <div class="hash">${current ? `sha256 ${current.sha256.slice(0, 16)}… · ${formatBytes(current.contentLength)}` : ""}</div>
+        <div class="body">${esc(current?.text || (side?.removed ? "Looks deleted. An older copy is still kept." : side?.error ? "Could not read this place." : "Nothing here yet."))}</div>
+        <div class="hash">${current ? formatBytes(current.contentLength) : ""}</div>
         ${(side?.deleteMarkers || []).filter((item) => item.isLatest).map((item) => `
           <div class="ver">
-            <span>delete marker · ${esc(shortId(item.versionId))}</span>
+            <span>marked deleted</span>
             <span>${esc(formatWhen(item.lastModified))}</span>
           </div>
         `).join("")}
         ${(side?.versions || []).map((version) => `
           <div class="ver${version.isLatest ? "" : " old"}">
-            <span>${version.isLatest ? "current" : "older"} · ${esc(shortId(version.versionId))}</span>
+            <span>${version.isLatest ? "current file" : "older copy"}</span>
             <span>${esc(formatWhen(version.lastModified))}</span>
           </div>
         `).join("")}
@@ -732,74 +773,77 @@
         const row = (key, left, cls) => `<div class="bulk-row"><span>${esc(key)}</span><span class="stamp ${cls}">${esc(left)}</span></div>`;
         const src = state.prefix.rows.map((item) => row(
           item.key.replace(state.prefix.prefix, ""),
-          item.sourceRemoved ? "removed" : item.sourcePresent ? "current" : "missing",
+          item.sourceRemoved ? "deleted" : item.sourcePresent ? "ok" : "missing",
           item.sourceRemoved ? "fail" : item.sourcePresent ? "pass" : "missing",
         )).join("");
         const dest = state.prefix.rows.map((item) => row(
           item.key.replace(state.prefix.prefix, ""),
-          item.replicaPresent ? "copy present" : "no copy",
+          item.replicaPresent ? "backed up" : "not yet",
           item.replicaPresent ? "pass" : "missing",
         )).join("");
         $("source-side").className = "side source";
         $("backup-side").className = "side backup";
-        $("source-side").innerHTML = `<h3>Source bucket<small>${esc(s?.source?.region || "")} · ${state.prefix.readable} readable · ${state.prefix.removed} removed</small></h3><div class="bulk-grid">${src || `<p class="empty">No bulk files yet.</p>`}</div>`;
-        $("backup-side").innerHTML = `<h3>Backup bucket<small>${esc(s?.replica?.region || "")} · ${state.prefix.replica} copies</small></h3><div class="bulk-grid">${dest || `<p class="empty">No copies yet.</p>`}</div>`;
+        $("source-side").innerHTML = `<h3>Main files<small>${state.prefix.readable} ready · ${state.prefix.removed} deleted</small></h3><div class="bulk-grid">${src || `<p class="empty">No sample files yet.</p>`}</div>`;
+        $("backup-side").innerHTML = `<h3>Backup copies<small>${state.prefix.replica} copies</small></h3><div class="bulk-grid">${dest || `<p class="empty">No copies yet.</p>`}</div>`;
         return;
       }
       if (state.scene === "retention" && state.retention) {
+        const nice = { "critical/": "Important records", "app-data/": "Working files", "temp/": "Temporary" };
         const rules = (list) => (list || []).map((rule) => `
-          <div class="rule"><strong>${esc(rule.prefix || "?")}</strong><span>${esc(String(rule.days ?? "—"))} days</span></div>
+          <div class="rule"><strong>${esc(nice[rule.prefix] || rule.prefix || "?")}</strong><span>${esc(String(rule.days ?? "—"))} days</span></div>
         `).join("");
         const samples = (state.retention.insideWindow || []).map((item) =>
-          `${item.key}: ${item.insideWindow}/${item.listed} versions inside ${item.retentionDays}d`
+          `${item.key.split("/").pop()}: ${item.listed} recent ${item.listed === 1 ? "copy" : "copies"} kept`
         ).join("\n");
         $("source-side").className = "side source";
         $("backup-side").className = "side backup";
-        $("source-side").innerHTML = `<h3>Source lifecycle<small>${esc(s?.source?.region || "")}</small></h3><div class="rules">${rules(state.retention.source)}</div><div class="hash" style="margin-top:0.7rem">${esc(samples)}</div>`;
-        $("backup-side").innerHTML = `<h3>Backup lifecycle<small>${esc(s?.replica?.region || "")}</small></h3><div class="rules">${rules(state.retention.replica)}</div><p class="prove" style="margin-top:0.8rem">${state.retention.rulesMatch ? "Rules match the 90 / 30 / 1 day windows." : "Rules do not match the requirements."}</p>`;
+        $("source-side").innerHTML = `<h3>Main keep-rules</h3><div class="rules">${rules(state.retention.source)}</div><div class="hash" style="margin-top:0.7rem">${esc(samples)}</div>`;
+        $("backup-side").innerHTML = `<h3>Backup keep-rules</h3><div class="rules">${rules(state.retention.replica)}</div><p class="prove" style="margin-top:0.8rem">${state.retention.rulesMatch ? "Both sides keep files for the planned number of days." : "The keep-rules do not match the plan."}</p>`;
         return;
       }
-      renderSide($("source-side"), "Source bucket", s?.source ? s.source.region : "", state.view?.source);
-      renderSide($("backup-side"), "Backup bucket", s?.replica ? s.replica.region : "", state.view?.replica);
+      const mainName = s?.places?.main?.name || "Main files";
+      const backupName = s?.places?.backup?.name || "Backup copies";
+      renderSide($("source-side"), mainName, s?.places?.main?.summary || "", state.view?.source);
+      renderSide($("backup-side"), backupName, s?.places?.backup?.summary || "", state.view?.replica);
     }
 
     function resetSteps() {
       const steps = {
         copy: [
-          { id: "write", n: "1", label: "Write the file to the source bucket" },
-          { id: "wait", n: "2", label: "Wait until the backup bucket has it" },
-          { id: "match", n: "3", label: "Confirm both buckets have the same bytes" },
+          { id: "write", n: "1", label: "Save the file to Main files" },
+          { id: "wait", n: "2", label: "Wait for the backup copy" },
+          { id: "match", n: "3", label: "Check that both copies match" },
         ],
         overwrite: [
-          { id: "seed", n: "1", label: "Make sure the original file exists" },
-          { id: "overwrite", n: "2", label: "Overwrite it with different text" },
-          { id: "kept", n: "3", label: "Confirm the older version is still listed" },
-          { id: "restore", n: "4", label: "Restore the older version" },
-          { id: "match", n: "5", label: "Confirm the current file is the original again within 15 minutes" },
+          { id: "seed", n: "1", label: "Save the good file" },
+          { id: "overwrite", n: "2", label: "Overwrite it with the wrong text" },
+          { id: "kept", n: "3", label: "Check that the old copy is still kept" },
+          { id: "restore", n: "4", label: "Restore the old copy" },
+          { id: "match", n: "5", label: "Check that the good file is current again" },
         ],
         delete: [
-          { id: "seed", n: "1", label: "Read critical/sample.txt and record its checksum" },
-          { id: "delete", n: "2", label: "Delete the current object (S3 writes a delete marker)" },
-          { id: "hidden", n: "3", label: "Confirm a normal read no longer returns the file" },
-          { id: "restore", n: "4", label: "Restore the previous version" },
-          { id: "match", n: "5", label: "Confirm the application read matches and finished within 15 minutes" },
+          { id: "seed", n: "1", label: "Remember the current file" },
+          { id: "delete", n: "2", label: "Delete it" },
+          { id: "hidden", n: "3", label: "Check that it looks gone" },
+          { id: "restore", n: "4", label: "Bring the previous copy back" },
+          { id: "match", n: "5", label: "Check that the file is readable again" },
         ],
         bulk: [
-          { id: "seed", n: "1", label: "Write 10 files under app-data/bulk-scenario/" },
-          { id: "delete", n: "2", label: "Delete the whole prefix" },
-          { id: "hidden", n: "3", label: "Confirm those keys are hidden by delete markers" },
-          { id: "restore", n: "4", label: "Restore every key from its previous version" },
-          { id: "match", n: "5", label: "Confirm all 10 files are readable again within the 1-hour RTO" },
+          { id: "seed", n: "1", label: "Create 10 sample files" },
+          { id: "delete", n: "2", label: "Delete the whole group" },
+          { id: "hidden", n: "3", label: "Check that they look gone" },
+          { id: "restore", n: "4", label: "Restore every file" },
+          { id: "match", n: "5", label: "Check that all 10 are back" },
         ],
         temp: [
-          { id: "write", n: "1", label: "Write a scratch file under temp/" },
-          { id: "wait", n: "2", label: "Wait a few seconds and refresh the backup bucket" },
-          { id: "absent", n: "3", label: "Confirm the backup bucket does not have it" },
+          { id: "write", n: "1", label: "Save a scratch file" },
+          { id: "wait", n: "2", label: "Wait a moment, then check backup" },
+          { id: "absent", n: "3", label: "Confirm backup does not have it" },
         ],
         retention: [
-          { id: "rules", n: "1", label: "Read lifecycle rules on source and backup" },
-          { id: "match", n: "2", label: "Confirm 90 / 30 / 1 day windows" },
-          { id: "listed", n: "3", label: "Confirm listed sample versions are still inside the window" },
+          { id: "rules", n: "1", label: "Read the keep-rules" },
+          { id: "match", n: "2", label: "Check 90 / 30 / 1 day settings" },
+          { id: "listed", n: "3", label: "Check that recent copies are still listed" },
         ],
       };
       state.steps = steps[state.scene];
@@ -854,7 +898,7 @@
         if (result.done) return result;
         await sleep(2500);
       }
-      throw new Error("Timed out waiting for the backup bucket");
+      throw new Error("Timed out waiting for the backup copy");
     }
 
     async function runScene() {
@@ -871,62 +915,62 @@
         scene.overwrite = overwrite;
 
         if (state.scene === "copy") {
-          setStep("write", "wait", "Uploading to the source bucket…");
+          setStep("write", "wait", "Saving to Main files…");
           await putText(scene.key, original);
-          const afterWrite = await loadView();
-          setStep("write", "pass", `Wrote source version ${shortId(afterWrite.source.current?.versionId)}`);
+          await loadView();
+          setStep("write", "pass", "Saved in Main files");
           const waited = await waitFor((view) => ({
             done: view.replica.present && view.sameBytes,
             status: "pass",
-            detail: view.sameBytes ? "Backup bucket has the same SHA-256" : "Backup object appeared but bytes differ",
-          }), "wait", 120000, "Waiting for replication to us-west-2");
+            detail: view.sameBytes ? "Backup copies has a matching file" : "Backup has a file, but the text does not match",
+          }), "wait", 120000, "Still waiting for the backup copy");
           setStep("match", waited.status, waited.detail);
         }
 
         if (state.scene === "overwrite") {
-          setStep("seed", "wait", "Writing the original file…");
+          setStep("seed", "wait", "Saving the good file…");
           await putText(scene.key, original);
           let view = await loadView();
           state.knownGood = view.source.current?.sha256;
-          setStep("seed", "pass", `Original sha256 ${state.knownGood.slice(0, 16)}…`);
+          setStep("seed", "pass", "Good file is saved");
 
-          setStep("overwrite", "wait", "Writing the new body onto the same key…");
+          setStep("overwrite", "wait", "Replacing it with the wrong text…");
           await putText(scene.key, overwrite);
           view = await loadView();
           const nowBad = view.source.current?.sha256 !== state.knownGood;
-          setStep("overwrite", nowBad ? "pass" : "fail", nowBad ? "Current object is the overwrite" : "Current object did not change");
+          setStep("overwrite", nowBad ? "pass" : "fail", nowBad ? "The current file is now the wrong one" : "The file did not change");
 
           const older = (view.source.versions || []).filter((item) => !item.isLatest);
           setStep("kept", older.length ? "pass" : "fail", older.length
-            ? `${older.length} older version${older.length === 1 ? "" : "s"} still listed`
-            : "No older version found — versioning did not keep the original");
+            ? `Still keeping ${older.length} older ${older.length === 1 ? "copy" : "copies"}`
+            : "The old copy was lost");
 
-          setStep("restore", "wait", "Copying the previous version back onto the key…");
+          setStep("restore", "wait", "Restoring the good file…");
           await api("/api/restore-previous", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ key: scene.key }),
           });
           view = await loadView();
-          setStep("restore", "pass", `Restored. Current version ${shortId(view.source.current?.versionId)}`);
+          setStep("restore", "pass", "Restored");
           const matched = view.source.current?.sha256 === state.knownGood;
           setStep("match", matched ? "pass" : "fail", matched
-            ? "Current file matches the original bytes (15 min RTO)"
-            : "Current file does not match the original");
+            ? "The good file is current again"
+            : "The current file still does not match");
         }
 
         if (state.scene === "delete") {
           const key = scene.key;
-          setStep("seed", "wait", "Reading the current object…");
+          setStep("seed", "wait", "Reading the current file…");
           let view = await loadView();
           if (!view.source.current) {
             await putText(key, original || scene.original);
             view = await loadView();
           }
           state.knownGood = view.source.current.sha256;
-          setStep("seed", "pass", `Known-good sha256 ${state.knownGood.slice(0, 16)}…`);
+          setStep("seed", "pass", "Remembered the current file");
 
-          setStep("delete", "wait", "Deleting the current object…");
+          setStep("delete", "wait", "Deleting…");
           await api("/api/files", {
             method: "DELETE",
             headers: { "content-type": "application/json" },
@@ -934,13 +978,13 @@
           });
           view = await loadView();
           const marker = (view.source.deleteMarkers || []).some((item) => item.isLatest);
-          setStep("delete", marker ? "pass" : "fail", marker ? "Delete marker is latest" : "No delete marker");
+          setStep("delete", marker ? "pass" : "fail", marker ? "File is marked deleted" : "Delete did not stick");
 
           setStep("hidden", view.source.removed && !view.source.current ? "pass" : "fail",
-            view.source.removed ? "A normal read no longer returns the file" : "The file is still current");
+            view.source.removed ? "It looks gone now" : "The file is still visible");
 
           const started = Date.now();
-          setStep("restore", "wait", "Restoring the previous version…");
+          setStep("restore", "wait", "Bringing the previous copy back…");
           await api("/api/restore-previous", {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -952,8 +996,8 @@
           const matched = view.source.current?.sha256 === state.knownGood;
           const within = Number(elapsed) <= 15 * 60;
           setStep("match", matched && within ? "pass" : "fail", matched
-            ? `Application read matches known-good (${elapsed}s / 15 min RTO)`
-            : "Application read does not match the original");
+            ? `File is back and matches (${elapsed}s)`
+            : "Restored file does not match what we remembered");
         }
 
         if (state.scene === "bulk") {
@@ -964,20 +1008,20 @@
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ action, prefix, count }),
           });
-          setStep("seed", "wait", `Writing ${count} files…`);
+          setStep("seed", "wait", `Creating ${count} files…`);
           await bulk("seed");
           await loadView();
-          setStep("seed", state.prefix.readable === count ? "pass" : "fail", `${state.prefix.readable}/${count} files readable`);
+          setStep("seed", state.prefix.readable === count ? "pass" : "fail", `${state.prefix.readable}/${count} files ready`);
 
-          setStep("delete", "wait", "Deleting the prefix…");
+          setStep("delete", "wait", "Deleting the whole group…");
           await bulk("delete");
           await loadView();
-          setStep("delete", "pass", `Deleted ${count} keys`);
+          setStep("delete", "pass", `Deleted ${count} files`);
           setStep("hidden", state.prefix.removed === count && state.prefix.readable === 0 ? "pass" : "fail",
-            `${state.prefix.removed} delete markers, ${state.prefix.readable} still readable`);
+            `${state.prefix.removed} deleted, ${state.prefix.readable} still visible`);
 
           const started = Date.now();
-          setStep("restore", "wait", "Restoring every key…");
+          setStep("restore", "wait", "Restoring every file…");
           await bulk("restore");
           await loadView();
           const elapsed = ((Date.now() - started) / 1000).toFixed(1);
@@ -985,35 +1029,35 @@
           const ok = state.prefix.readable === count && state.prefix.removed === 0;
           const within = Number(elapsed) <= 60 * 60;
           setStep("match", ok && within ? "pass" : "fail", ok
-            ? `All ${count} files readable again (${elapsed}s / 1 hour RTO)`
-            : `${state.prefix.readable}/${count} readable after restore`);
+            ? `All ${count} files are back (${elapsed}s)`
+            : `${state.prefix.readable}/${count} files came back`);
         }
 
         if (state.scene === "retention") {
-          setStep("rules", "wait", "Reading bucket lifecycle…");
+          setStep("rules", "wait", "Reading keep-rules…");
           await loadView();
-          setStep("rules", "pass", "Loaded rules from source and backup");
+          setStep("rules", "pass", "Loaded keep-rules from both sides");
           setStep("match", state.retention.rulesMatch ? "pass" : "fail", state.retention.rulesMatch
-            ? "Both buckets keep critical/ 90d, app-data/ 30d, temp/ 1d"
-            : "Lifecycle rules do not match the recovery requirements");
+            ? "Important 90 days · Working 30 days · Temporary 1 day"
+            : "The keep-rules do not match the plan");
           const listed = (state.retention.insideWindow || []).every((item) => item.listed > 0 && item.insideWindow === item.listed);
           setStep("listed", listed ? "pass" : "fail", listed
-            ? "Listed sample versions are all inside the retention window"
-            : "A listed version is outside the window, or no versions were found");
+            ? "Recent sample copies are still listed"
+            : "A listed copy is too old, or none were found");
         }
 
         if (state.scene === "temp") {
-          setStep("write", "wait", "Uploading to temp/ on the source bucket…");
+          setStep("write", "wait", "Saving a scratch file…");
           await putText(scene.key, original);
           const afterWrite = await loadView();
-          setStep("write", afterWrite.source.present ? "pass" : "fail", "Source bucket has the scratch file");
-          setStep("wait", "wait", "Checking that the backup bucket stays empty for this key…");
+          setStep("write", afterWrite.source.present ? "pass" : "fail", "Scratch file is in Main files");
+          setStep("wait", "wait", "Checking that Backup copies stays empty…");
           await sleep(4000);
           const later = await loadView();
-          setStep("wait", "pass", "Checked backup bucket");
+          setStep("wait", "pass", "Checked Backup copies");
           setStep("absent", later.replica.present ? "fail" : "pass", later.replica.present
-            ? "Unexpected: temp/ object appeared on the backup bucket"
-            : "Backup bucket does not have this key");
+            ? "Unexpected: Backup copies got a scratch file"
+            : "Backup copies does not have this file — good");
         }
       } catch (err) {
         banner(err.message);
@@ -1038,14 +1082,13 @@
       const folders = [{ id: "all", name: "All folders" }, ...(state.status?.folders || [])];
       $("file-filters").innerHTML = folders.map((folder) => `
         <button type="button" data-filter="${esc(folder.id)}" class="${state.fileFilter === folder.id ? "active" : ""}">${esc(folder.name || folder.id)}</button>
-      `).join("") + `<button type="button" id="reload-files">Reload</button>`;
+      `).join("");
       $("file-filters").querySelectorAll("[data-filter]").forEach((btn) => {
         btn.onclick = () => {
           state.fileFilter = btn.dataset.filter;
           renderFiles();
         };
       });
-      $("reload-files").onclick = () => loadFiles();
     }
 
     function renderFiles() {
@@ -1063,7 +1106,7 @@
               <th>Folder</th>
               <th>State</th>
               <th>Copies</th>
-              <th>Replica</th>
+              <th>Backup</th>
             </tr>
           </thead>
           <tbody>
@@ -1076,7 +1119,7 @@
                 <td>${esc(file.folderName)}</td>
                 <td>${file.removed ? `<span class="stamp fail">Deleted</span>` : `<span class="stamp pass">Current</span>`}</td>
                 <td>${esc(String(file.copies))}</td>
-                <td>${file.backedUp ? (file.secondCopy ? `<span class="stamp source">Present</span>` : `<span class="stamp wait">Waiting</span>`) : `<span class="stamp missing">Skipped</span>`}</td>
+                <td>${file.backedUp ? (file.secondCopy ? `<span class="stamp source">Yes</span>` : `<span class="stamp wait">Waiting</span>`) : `<span class="stamp missing">Not needed</span>`}</td>
               </tr>
             `).join("")}
           </tbody>
@@ -1095,15 +1138,15 @@
         return;
       }
       const preview = state.preview?.text
-        ? `<div class="body">${esc(state.preview.text)}</div><div class="hash">sha256 ${esc((state.preview.sha256 || "").slice(0, 16))}…</div>`
-        : `<p class="prove">${file.removed ? "This key is hidden by a delete marker." : "No text preview for this version."}</p>`;
+        ? `<div class="body">${esc(state.preview.text)}</div><div class="hash">${esc(formatBytes(state.preview.contentLength))}</div>`
+        : `<p class="prove">${file.removed ? "This file looks deleted. An older copy may still be kept." : "No text preview for this version."}</p>`;
       $("file-detail").innerHTML = `
         <h3>${esc(file.name)}</h3>
-        <p class="meta-line"><code>${esc(file.key)}</code></p>
+        <p class="meta-line">${esc(file.folderName)}</p>
         <div class="chips" style="margin-bottom:0.7rem">
           <span class="stamp ${file.removed ? "fail" : "pass"}">${file.removed ? "Deleted" : "Current"}</span>
-          <span class="stamp missing">${esc(String(file.retentionDays))}d retention</span>
-          <span class="stamp ${file.secondCopy ? "source" : "missing"}">${file.backedUp ? (file.secondCopy ? "Replica has a copy" : "No replica yet") : "Not replicated"}</span>
+          <span class="stamp missing">Kept ${esc(String(file.retentionDays))} days</span>
+          <span class="stamp ${file.secondCopy ? "source" : "missing"}">${file.backedUp ? (file.secondCopy ? "Backup copy ready" : "Backup copy waiting") : "No backup needed"}</span>
         </div>
         ${preview}
         <div class="actions">
@@ -1114,16 +1157,16 @@
           ${(history.deleteMarkers || []).filter((item) => item.isLatest).map((item) => `
             <div class="version-item">
               <div>
-                <strong>Delete marker</strong>
-                <div class="hash">${esc(shortId(item.versionId))} · ${esc(formatWhen(item.lastModified))}</div>
+                <strong>Marked deleted</strong>
+                <div class="hash">${esc(formatWhen(item.lastModified))}</div>
               </div>
             </div>
           `).join("")}
           ${(history.versions || []).map((version) => `
             <div class="version-item">
               <div>
-                <strong>${version.isLatest ? "Current version" : "Older version"}</strong>
-                <div class="hash">${esc(shortId(version.versionId))} · ${esc(formatWhen(version.lastModified))} · ${esc(formatBytes(version.size))}</div>
+                <strong>${version.isLatest ? "Current file" : "Older copy"}</strong>
+                <div class="hash">${esc(formatWhen(version.lastModified))}${version.size != null ? ` · ${esc(formatBytes(version.size))}` : ""}</div>
               </div>
               ${version.isLatest ? "" : `<button type="button" data-restore="${esc(version.versionId)}">Bring back</button>`}
             </div>

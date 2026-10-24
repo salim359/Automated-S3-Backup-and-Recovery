@@ -24,8 +24,7 @@ Versioned S3 storage with cross-region backup, so you can undo overwrites and de
 | Wipe of many files (up to 100) | Restore within **1 hour** |
 | `us-east-1` unavailable | Use the backup bucket; accept up to **15 minutes** of lag |
 
-Details: [docs/01-recovery-requirements.md](docs/01-recovery-requirements.md)  
-Operator steps: [docs/02-recovery-runbook.md](docs/02-recovery-runbook.md)
+Details: [docs/01-recovery-requirements.md](docs/01-recovery-requirements.md)
 
 ## Project layout
 
@@ -36,7 +35,7 @@ lib/backup-bucket-stack.ts Backup bucket + KMS key (us-west-2)
 lib/retention.ts           Lifecycle rules
 sample-data/               Seed files deployed into the source bucket
 ui/                        Local scenario dashboard
-docs/                      Requirements and runbook
+docs/                      Recovery requirements
 test/                      CDK unit tests
 ```
 
@@ -112,23 +111,6 @@ The dashboard resolves bucket names from CloudFormation outputs (or from `SOURCE
 There is also a **Browse files** view for listing keys, older copies, and restoring one by hand.
 
 Uses your local AWS credentials. Keep it on localhost; it can write and delete objects in the deployed buckets.
-
-## Manual recovery (CLI)
-
-If you prefer the CLI, use the runbook. Short version for one overwritten key in the source region:
-
-```bash
-SOURCE=$(aws cloudformation describe-stacks --region us-east-1 --stack-name BackupSysStack \
-  --query "Stacks[0].Outputs[?OutputKey=='SourceBucketName'].OutputValue" --output text)
-
-aws s3api list-object-versions --bucket "$SOURCE" --prefix "app-data/sample.txt" --region us-east-1
-
-aws s3api copy-object \
-  --bucket "$SOURCE" \
-  --key "app-data/sample.txt" \
-  --copy-source "${SOURCE}/app-data/sample.txt?versionId=VERSION_ID" \
-  --region us-east-1
-```
 
 ## Tests
 

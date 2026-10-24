@@ -1,0 +1,4 @@
+[
+  { "id": "CR-1001", "name": "Acme Corp", "tier": "gold" },
+  { "id": "CR-1002", "name": "Northwind", "tier": "silver" }
+]

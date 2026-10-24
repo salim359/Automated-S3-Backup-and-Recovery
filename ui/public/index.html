@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backup desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --burgundy: #7c0e44;
+      --rose: #aa5e7a;
+      --dust: #d49a9a;
+      --blush: #f2dace;
+      --bg: var(--blush);
+      --bg-deep: #e8c8b8;
+      --ink: #4a0a2a;
+      --ink-strong: var(--burgundy);
+      --muted: #8f4a62;
+      --card: #fff7ef;
+      --card-2: #f8e6d6;
+      --line: var(--dust);
+      --source: var(--burgundy);
+      --source-soft: #f0d5c8;
+      --backup: var(--rose);
+      --backup-soft: #f3ddd2;
+      --pass: #2f6b45;
+      --pass-soft: #e4efdf;
+      --fail: #7c0e44;
+      --fail-soft: #f4d8d0;
+      --wait: #9a5a2a;
+      --wait-soft: #f6e6d0;
+      --shadow: 0 12px 32px rgba(124, 14, 68, 0.08);
+      --radius: 12px;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background:
+        radial-gradient(900px 420px at 0% -5%, rgba(170, 94, 122, 0.22) 0%, transparent 55%),
+        radial-gradient(780px 380px at 100% 0%, rgba(124, 14, 68, 0.14) 0%, transparent 50%),
+        linear-gradient(180deg, #f7e6d8 0%, var(--blush) 42%, #edd0be 100%);
+      color: var(--ink);
+      font: 15px/1.5 Outfit, sans-serif;
+    }
+    button, textarea, input, select { font: inherit; }
+    button {
+      border: 1px solid var(--dust);
+      background: var(--card);
+      color: var(--ink);
+      padding: 0.55rem 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.18s var(--ease), transform 0.18s var(--ease), border-color 0.18s var(--ease);
+    }
+    button:hover { background: #fff; border-color: var(--rose); }
+    button:focus-visible { outline: 2px solid var(--burgundy); outline-offset: 2px; }
+    button.primary {
+      background: var(--burgundy);
+      border-color: var(--burgundy);
+      color: #fff4ec;
+    }
+    button.primary:hover { background: #640b37; }
+    button.ghost { background: transparent; }
+    button.danger { background: var(--fail); border-color: var(--fail); color: #fff4ec; }
+    button:disabled { opacity: 0.45; cursor: wait; }
+    textarea, input[type="text"], select {
+      width: 100%;
+      border: 1px solid var(--dust);
+      background: #fffaf5;
+      color: var(--ink);
+      padding: 0.7rem 0.8rem;
+      border-radius: 8px;
+    }
+    textarea:focus, input[type="text"]:focus, select:focus {
+      outline: 2px solid rgba(124, 14, 68, 0.28);
+      border-color: var(--rose);
+    }
+    textarea { min-height: 6.4rem; resize: vertical; }
+    label {
+      display: block;
+      font-size: 11px;
+      color: var(--rose);
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.5rem;
+      background: rgba(242, 218, 206, 0.86);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(212, 154, 154, 0.7);
+    }
+    .brand { display: flex; align-items: center; gap: 0.8rem; min-width: 220px; }
+    .mark {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(145deg, var(--burgundy), var(--rose));
+      color: #fff4ec;
+      display: grid; place-items: center;
+      font-family: "Bricolage Grotesque", Outfit, sans-serif;
+      font-weight: 700; font-size: 1.2rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    .brand h1 {
+      font-family: "Bricolage Grotesque", Outfit, sans-serif;
+      font-size: 1.4rem; font-weight: 700; margin: 0;
+      letter-spacing: -0.03em; color: var(--burgundy);
+    }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    .modes {
+      display: flex; gap: 0.25rem;
+      background: rgba(255, 247, 239, 0.7);
+      padding: 0.22rem; border-radius: 10px;
+      border: 1px solid var(--dust);
+    }
+    .modes button { border: 0; padding: 0.42rem 0.95rem; background: transparent; border-radius: 8px; }
+    .modes button.active {
+      background: var(--burgundy);
+      color: #fff4ec;
+      animation: modeIn 0.28s var(--ease);
+    }
+    @keyframes modeIn {
+      from { transform: scale(0.96); opacity: 0.7; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .meta { margin-left: auto; display: flex; gap: 0.45rem; flex-wrap: wrap; justify-content: flex-end; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.3rem 0.7rem; border-radius: 8px;
+      background: var(--card); border: 1px solid var(--dust);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 12px; color: var(--muted);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dust); }
+    .dot.live {
+      background: var(--burgundy);
+      box-shadow: 0 0 0 4px rgba(124, 14, 68, 0.14);
+      animation: livePulse 1.8s ease-in-out infinite;
+    }
+    .dot.down { background: var(--fail); }
+    @keyframes livePulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(124, 14, 68, 0.12); }
+      50% { box-shadow: 0 0 0 6px rgba(124, 14, 68, 0.06); }
+    }
+
+    .banner {
+      margin: 0.9rem 1.5rem 0;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      background: var(--fail-soft);
+      color: var(--fail);
+      border: 1px solid rgba(124, 14, 68, 0.18);
+      animation: riseIn 0.35s var(--ease);
+    }
+    .banner.ok { background: var(--pass-soft); color: var(--pass); border-color: rgba(47, 107, 69, 0.2); }
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.8rem;
+      padding: 1.1rem 1.5rem 0;
+    }
+    .folder {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.05rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.22s var(--ease), border-color 0.22s var(--ease);
+      animation: riseIn 0.45s var(--ease) both;
+    }
+    .folder:nth-child(2) { animation-delay: 0.06s; }
+    .folder:nth-child(3) { animation-delay: 0.12s; }
+    .folder:hover { transform: translateY(-2px); border-color: var(--rose); }
+    .folder::before {
+      content: "";
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: linear-gradient(180deg, var(--burgundy), var(--dust));
+    }
+    .folder h3 {
+      margin: 0 0 0.3rem;
+      font-family: "Bricolage Grotesque", Outfit, sans-serif;
+      font-size: 1.05rem; font-weight: 650; color: var(--burgundy);
+    }
+    .folder p { margin: 0; color: var(--muted); font-size: 13px; }
+    .folder .chips { margin-top: 0.7rem; display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      padding: 1.1rem 1.5rem 0.25rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .tabs button {
+      white-space: nowrap;
+      background: rgba(255, 247, 239, 0.65);
+    }
+    .tabs button.active {
+      background: var(--burgundy);
+      border-color: var(--burgundy);
+      color: #fff4ec;
+      box-shadow: 0 8px 18px rgba(124, 14, 68, 0.18);
+    }
+    .tabs button small {
+      display: block; font-size: 11px; opacity: 0.72; font-weight: 400; margin-top: 0.1rem;
+    }
+
+    main.desk {
+      padding: 0.95rem 1.5rem 2.2rem;
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    .panel, .side, .files-shell, .detail {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 1.15rem 1.2rem 1.25rem; animation: riseIn 0.4s var(--ease); }
+    .panel h2, .side h3, .detail h3 {
+      font-family: "Bricolage Grotesque", Outfit, sans-serif;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+      color: var(--burgundy);
+    }
+    .prove { color: var(--muted); margin: 0 0 0.85rem; }
+    .meta-line { color: var(--muted); font-size: 13px; margin: 0 0 1rem; }
+    .meta-line code, .mono {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--ink-strong);
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 0.7rem;
+      padding: 0.55rem 0;
+    }
+    .rail { position: relative; }
+    .rail::before {
+      content: "";
+      position: absolute;
+      left: 8px; top: 18px; bottom: -18px;
+      width: 1px; background: var(--dust);
+    }
+    .step:last-of-type .rail::before { display: none; }
+    .node {
+      width: 17px; height: 17px; margin-top: 2px;
+      border-radius: 50%; border: 2px solid var(--dust); background: #fff;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s var(--ease);
+    }
+    .node.pass { border-color: var(--pass); background: var(--pass); }
+    .node.fail { border-color: var(--fail); background: var(--fail); }
+    .node.wait {
+      border-color: var(--wait);
+      background: var(--wait-soft);
+      animation: pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes pulse { 50% { transform: scale(1.15); } }
+    @media (prefers-reduced-motion: reduce) {
+      .node.wait, .dot.live, .modes button.active, .folder, .panel, .banner { animation: none; }
+    }
+    .step .label { font-weight: 500; color: var(--ink); }
+    .status { font-size: 13px; margin-top: 0.15rem; color: var(--muted); }
+    .status.pass { color: var(--pass); }
+    .status.fail { color: var(--fail); }
+    .status.wait { color: var(--wait); }
+
+    .actions { margin-top: 1rem; display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
+    .clock {
+      margin-left: auto;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      color: var(--rose);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.75rem;
+      min-width: 0;
+      align-items: stretch;
+    }
+    .side { padding: 1rem 1.05rem 1.1rem; min-width: 0; }
+    .side.source { box-shadow: inset 4px 0 0 var(--source), var(--shadow); }
+    .side.backup { box-shadow: inset 4px 0 0 var(--backup), var(--shadow); }
+    .side h3 small {
+      display: block;
+      color: var(--muted);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      font-weight: 400;
+      margin-top: 0.15rem;
+    }
+    .sync {
+      display: flex; justify-content: center; align-items: center;
+      align-self: center;
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--dust);
+      background: var(--card);
+      color: var(--burgundy);
+      font-size: 1.1rem;
+      box-shadow: var(--shadow);
+    }
+    .body {
+      background: linear-gradient(160deg, #5a0c34 0%, #7c0e44 55%, #9a4a66 100%);
+      color: #fff4ec;
+      padding: 0.85rem 0.9rem;
+      min-height: 8.5rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0.7rem 0 0.45rem;
+      border-radius: 10px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .ver {
+      font-size: 12px;
+      padding: 0.42rem 0;
+      border-bottom: 1px solid rgba(212, 154, 154, 0.55);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--ink);
+    }
+    .ver.old { color: var(--muted); }
+    .stamp {
+      display: inline-block;
+      padding: 0.18rem 0.5rem;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .stamp.pass { background: var(--pass-soft); color: var(--pass); }
+    .stamp.fail { background: var(--fail-soft); color: var(--fail); }
+    .stamp.wait { background: var(--wait-soft); color: var(--wait); }
+    .stamp.missing { background: #f0ddd0; color: var(--muted); }
+    .stamp.source { background: var(--source-soft); color: var(--source); }
+    .stamp.backup { background: var(--backup-soft); color: var(--backup); }
+    .hash { color: var(--muted); font-size: 12px; font-family: "IBM Plex Mono", monospace; }
+
+    .result {
+      margin: 0.9rem 0 0;
+      padding: 0.8rem 0.9rem;
+      border-radius: 10px;
+      background: var(--card-2);
+      border: 1px solid var(--line);
+      animation: riseIn 0.3s var(--ease);
+    }
+    .result.pass { background: var(--pass-soft); border-color: #b9d2bc; }
+    .result.fail { background: var(--fail-soft); border-color: #e0b4ad; }
+
+    .files-app {
+      padding: 0.95rem 1.5rem 2.2rem;
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    .files-shell { padding: 0.95rem; overflow: hidden; }
+    .file-toolbar { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .file-toolbar button.active {
+      background: var(--burgundy);
+      color: #fff4ec;
+      border-color: var(--burgundy);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.68rem 0.5rem; border-bottom: 1px solid rgba(212, 154, 154, 0.55); vertical-align: top; }
+    th {
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--rose); font-weight: 600;
+    }
+    tr.file-row { cursor: pointer; transition: background 0.15s ease; }
+    tr.file-row:hover { background: #faf0e6; }
+    tr.file-row.selected { background: var(--source-soft); }
+    .empty { color: var(--muted); padding: 1.4rem 0.4rem; }
+    .detail { padding: 1.05rem 1.1rem 1.2rem; }
+    .version-list { margin-top: 0.7rem; }
+    .version-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.4rem 0.7rem;
+      padding: 0.7rem 0;
+      border-top: 1px solid rgba(212, 154, 154, 0.55);
+    }
+    .hidden { display: none !important; }
+    .bulk-grid { display: grid; gap: 0.35rem; }
+    .bulk-row {
+      display: flex; justify-content: space-between; gap: 0.6rem;
+      padding: 0.45rem 0.55rem; background: var(--card-2); border-radius: 8px;
+      font-family: "IBM Plex Mono", monospace; font-size: 12px;
+    }
+    .rules { display: grid; gap: 0.45rem; }
+    .rule {
+      display: grid; grid-template-columns: 1fr auto; gap: 0.4rem;
+      padding: 0.55rem 0.6rem; background: var(--card-2); border-radius: 8px;
+    }
+    .chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+    @media (max-width: 980px) {
+      .top { flex-wrap: wrap; }
+      .meta { margin-left: 0; width: 100%; }
+      .overview, main.desk, .pair, .files-app { grid-template-columns: 1fr; }
+      .sync { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">B</div>
+      <div>
+        <h1>Backup desk</h1>
+        <p>Source, replica, and recovery checks</p>
+      </div>
+    </div>
+    <nav class="modes" aria-label="Workspace">
+      <button type="button" class="active" data-mode="scenarios">Scenarios</button>
+      <button type="button" data-mode="files">Files</button>
+    </nav>
+    <div class="meta" id="meta">
+      <span class="pill"><span class="dot"></span> Connecting…</span>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+  <section class="overview" id="overview"></section>
+
+  <div id="scenario-app">
+    <nav class="tabs" aria-label="Scenarios">
+      <button type="button" class="active" data-scene="copy">1. Copy<small>Replica RPO</small></button>
+      <button type="button" data-scene="overwrite">2. Overwrite<small>F1 · 15 min</small></button>
+      <button type="button" data-scene="delete">3. Delete<small>F2 · 15 min</small></button>
+      <button type="button" data-scene="bulk">4. Bulk delete<small>F3 · 1 hour</small></button>
+      <button type="button" data-scene="temp">5. Temporary<small>Not copied</small></button>
+      <button type="button" data-scene="retention">6. Retention<small>90 / 30 / 1</small></button>
+    </nav>
+    <main class="desk">
+      <section class="panel" id="steps"></section>
+      <section class="pair">
+        <article class="side source" id="source-side"></article>
+        <div class="sync" aria-hidden="true">⇄</div>
+        <article class="side backup" id="backup-side"></article>
+      </section>
+    </main>
+  </div>
+
+  <div id="files-app" class="files-app hidden">
+    <section class="files-shell">
+      <div class="file-toolbar" id="file-filters"></div>
+      <div id="file-list"><p class="empty">Loading files…</p></div>
+    </section>
+    <aside class="detail" id="file-detail">
+      <h3>Choose a file</h3>
+      <p class="prove">Open a row to see versions, the replica copy, and restore options.</p>
+    </aside>
+  </div>
+
+  <script>
+    const SCENES = {
+      copy: {
+        title: "Upload is copied",
+        prove: "Put a working file in us-east-1. The same bytes should show up in the backup bucket in us-west-2 (F4 / 15-minute RPO).",
+        key: "app-data/scenario-test.txt",
+        original: "SCENARIO 1 — first upload.\nThis file should appear in the backup bucket.",
+        rto: "Replica should appear within 15 minutes.",
+      },
+      overwrite: {
+        title: "Overwrite keeps the old file",
+        prove: "Replace the file. Versioning keeps the original, and restore makes those bytes current again. RTO is 15 minutes.",
+        key: "app-data/scenario-test.txt",
+        original: "SCENARIO 2 — original file.\nKeep this text. The overwrite should not destroy it.",
+        overwrite: "SCENARIO 2 — overwritten file.\nThis is the bad copy. Restore should bring the original back.",
+        rto: "15 minutes",
+      },
+      delete: {
+        title: "Delete one object",
+        prove: "Delete critical/sample.txt. A delete marker hides it, but the bytes stay. Restore must finish within 15 minutes.",
+        key: "critical/sample.txt",
+        original: "CRITICAL v1 — customer record CR-1001.\nThis file must remain recoverable after overwrite or delete.",
+        rto: "15 minutes",
+      },
+      bulk: {
+        title: "Bulk delete",
+        prove: "Wipe a prefix, then restore every key. The requirement is up to 100 objects in 1 hour. This run uses 10 files under app-data/bulk-scenario/.",
+        key: "app-data/bulk-scenario/001.txt",
+        prefix: "app-data/bulk-scenario/",
+        count: 10,
+        rto: "1 hour for up to 100 keys",
+      },
+      temp: {
+        title: "Temporary is not copied",
+        prove: "temp/ is not replicated. A new scratch file should stay only in the source bucket.",
+        key: "temp/scenario-skip.txt",
+        original: "SCENARIO — scratch file.\nThis should not appear in the backup bucket.",
+      },
+      retention: {
+        title: "Retention window",
+        prove: "critical/ keeps noncurrent versions 90 days, app-data/ 30 days, temp/ 1 day. A version older than the window is expected to expire; one inside the window must still be listed.",
+        key: "critical/sample.txt",
+      },
+    };
+
+    const state = {
+      mode: "scenarios",
+      scene: "copy",
+      status: null,
+      view: null,
+      busy: false,
+      steps: [],
+      knownGood: "",
+      prefix: null,
+      retention: null,
+      files: [],
+      fileFilter: "all",
+      selectedKey: null,
+      history: null,
+      preview: null,
+      startedAt: 0,
+      clock: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+
+    function banner(message, ok) {
+      $("banner").hidden = !message;
+      $("banner").textContent = message || "";
+      $("banner").classList.toggle("ok", Boolean(ok));
+    }
+
+    function shortId(id) {
+      if (!id || id.length < 16) return id || "";
+      return `${id.slice(0, 8)}…${id.slice(-4)}`;
+    }
+
+    function formatWhen(value) {
+      if (!value) return "";
+      return value.replace("T", " ").slice(0, 19);
+    }
+
+    function formatBytes(size) {
+      if (!Number.isFinite(size)) return "";
+      if (size < 1024) return `${size} B`;
+      if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatElapsed(ms) {
+      const total = Math.max(0, Math.floor(ms / 1000));
+      const minutes = Math.floor(total / 60);
+      const seconds = String(total % 60).padStart(2, "0");
+      return minutes ? `${minutes}:${seconds}` : `0:${seconds}`;
+    }
+
+    async function api(path, options) {
+      const res = await fetch(path, options);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || res.statusText);
+      return data;
+    }
+
+    function setStep(id, status, detail) {
+      const step = state.steps.find((item) => item.id === id);
+      if (step) {
+        step.status = status;
+        step.detail = detail;
+      }
+      renderSteps();
+    }
+
+    function sceneDef() {
+      return SCENES[state.scene];
+    }
+
+    function renderMeta() {
+      const s = state.status;
+      if (!s?.ready) {
+        $("meta").innerHTML = `<span class="pill"><span class="dot down"></span> ${esc(s?.error || "Buckets are not ready")}</span>`;
+        return;
+      }
+      $("meta").innerHTML = `
+        <span class="pill"><span class="dot live"></span> Source ${esc(s.source.region)}</span>
+        <span class="pill"><span class="dot live"></span> Backup ${esc(s.replica.region)}</span>
+      `;
+    }
+
+    function renderOverview() {
+      const folders = state.status?.folders || [
+        { id: "critical", name: "Important records", summary: "Contracts, invoices, and records you cannot recreate.", retentionDays: 90, backedUp: true },
+        { id: "app-data", name: "Working files", summary: "Everyday uploads. Previous copies are kept for 30 days.", retentionDays: 30, backedUp: true },
+        { id: "temp", name: "Temporary", summary: "Scratch files. These are not copied to the second location.", retentionDays: 1, backedUp: false },
+      ];
+      $("overview").innerHTML = folders.map((folder) => `
+        <article class="folder">
+          <h3>${esc(folder.name)}</h3>
+          <p>${esc(folder.summary)}</p>
+          <div class="chips">
+            <span class="stamp ${folder.backedUp ? "source" : "missing"}">${folder.backedUp ? "Replicated" : "Source only"}</span>
+            <span class="stamp missing">${esc(String(folder.retentionDays))} day${folder.retentionDays === 1 ? "" : "s"} kept</span>
+            <span class="stamp missing">${esc(folder.prefix || folder.id + "/")}</span>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function runLabel() {
+      return {
+        copy: "Run copy test",
+        overwrite: "Run overwrite test",
+        delete: "Run delete test",
+        bulk: "Run bulk delete test",
+        temp: "Run temporary test",
+        retention: "Check retention rules",
+      }[state.scene];
+    }
+
+    function resultCard() {
+      if (!state.steps.length || state.steps.some((step) => !step.status)) return "";
+      const failed = state.steps.some((step) => step.status === "fail");
+      const waiting = state.steps.some((step) => step.status === "wait");
+      if (waiting) return "";
+      const cls = failed ? "fail" : "pass";
+      const label = failed ? "Check did not pass" : "All steps passed";
+      const elapsed = state.startedAt ? ` in ${formatElapsed(Date.now() - state.startedAt)}` : "";
+      return `<div class="result ${cls}"><strong>${label}</strong>${esc(elapsed)}. Refresh the buckets if you want a second look.</div>`;
+    }
+
+    function renderSteps() {
+      const scene = sceneDef();
+      let body = "";
+      if (state.scene === "overwrite") {
+        body = `<label for="original">Original</label><textarea id="original">${esc(scene.original)}</textarea>
+           <label for="overwrite" style="margin-top:0.7rem">Overwrite with</label><textarea id="overwrite">${esc(scene.overwrite)}</textarea>`;
+      } else if (state.scene === "delete" || state.scene === "copy" || state.scene === "temp") {
+        body = `<label for="original">File contents</label><textarea id="original">${esc(scene.original || "")}</textarea>`;
+      } else if (state.scene === "bulk") {
+        body = `<p class="prove">${esc(String(scene.count))} keys under <code>${esc(scene.prefix)}</code></p>`;
+      } else {
+        body = `<p class="prove">Reads the live lifecycle rules and the versions still listed for the sample files.</p>`;
+      }
+
+      $("steps").innerHTML = `
+        <h2>${esc(scene.title)}</h2>
+        <p class="prove">${esc(scene.prove)}</p>
+        <p class="meta-line">${scene.prefix ? `Prefix <code>${esc(scene.prefix)}</code>` : `Key <code>${esc(scene.key)}</code>`}${scene.rto ? ` · RTO ${esc(scene.rto)}` : ""}</p>
+        ${body}
+        ${state.steps.map((step) => `
+          <div class="step">
+            <div class="rail"><div class="node ${esc(step.status || "")}"></div></div>
+            <div>
+              <div class="label">Step ${esc(step.n)} · ${esc(step.label)}</div>
+              <div class="status ${esc(step.status || "")}">${esc(step.detail || "Not started")}</div>
+            </div>
+          </div>
+        `).join("")}
+        ${resultCard()}
+        <div class="actions">
+          <button class="primary" id="run">${esc(runLabel())}</button>
+          <button id="refresh" type="button">Refresh buckets</button>
+          <span class="clock" id="clock">${state.busy && state.startedAt ? formatElapsed(Date.now() - state.startedAt) : ""}</span>
+        </div>
+      `;
+      $("run").onclick = () => runScene();
+      $("refresh").onclick = () => loadView();
+      $("run").disabled = state.busy;
+    }
+
+    function renderSide(el, title, region, side) {
+      const current = side?.current;
+      const stamp = side?.removed
+        ? `<span class="stamp fail">Delete marker</span>`
+        : !side?.present
+        ? `<span class="stamp missing">Not in this bucket</span>`
+        : `<span class="stamp pass">${side.versions.length} version${side.versions.length === 1 ? "" : "s"}</span>`;
+      el.className = `side ${el.id === "source-side" ? "source" : "backup"}`;
+      el.innerHTML = `
+        <h3>${esc(title)}<small>${esc(region || "")}</small></h3>
+        ${stamp}
+        <div class="body">${esc(current?.text || (side?.removed ? "Removed. The bytes are still in an older version." : side?.error ? side.error : "Nothing here yet."))}</div>
+        <div class="hash">${current ? `sha256 ${current.sha256.slice(0, 16)}… · ${formatBytes(current.contentLength)}` : ""}</div>
+        ${(side?.deleteMarkers || []).filter((item) => item.isLatest).map((item) => `
+          <div class="ver">
+            <span>delete marker · ${esc(shortId(item.versionId))}</span>
+            <span>${esc(formatWhen(item.lastModified))}</span>
+          </div>
+        `).join("")}
+        ${(side?.versions || []).map((version) => `
+          <div class="ver${version.isLatest ? "" : " old"}">
+            <span>${version.isLatest ? "current" : "older"} · ${esc(shortId(version.versionId))}</span>
+            <span>${esc(formatWhen(version.lastModified))}</span>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    function renderView() {
+      const s = state.status;
+      if (state.scene === "bulk" && state.prefix) {
+        const row = (key, left, cls) => `<div class="bulk-row"><span>${esc(key)}</span><span class="stamp ${cls}">${esc(left)}</span></div>`;
+        const src = state.prefix.rows.map((item) => row(
+          item.key.replace(state.prefix.prefix, ""),
+          item.sourceRemoved ? "removed" : item.sourcePresent ? "current" : "missing",
+          item.sourceRemoved ? "fail" : item.sourcePresent ? "pass" : "missing",
+        )).join("");
+        const dest = state.prefix.rows.map((item) => row(
+          item.key.replace(state.prefix.prefix, ""),
+          item.replicaPresent ? "copy present" : "no copy",
+          item.replicaPresent ? "pass" : "missing",
+        )).join("");
+        $("source-side").className = "side source";
+        $("backup-side").className = "side backup";
+        $("source-side").innerHTML = `<h3>Source bucket<small>${esc(s?.source?.region || "")} · ${state.prefix.readable} readable · ${state.prefix.removed} removed</small></h3><div class="bulk-grid">${src || `<p class="empty">No bulk files yet.</p>`}</div>`;
+        $("backup-side").innerHTML = `<h3>Backup bucket<small>${esc(s?.replica?.region || "")} · ${state.prefix.replica} copies</small></h3><div class="bulk-grid">${dest || `<p class="empty">No copies yet.</p>`}</div>`;
+        return;
+      }
+      if (state.scene === "retention" && state.retention) {
+        const rules = (list) => (list || []).map((rule) => `
+          <div class="rule"><strong>${esc(rule.prefix || "?")}</strong><span>${esc(String(rule.days ?? "—"))} days</span></div>
+        `).join("");
+        const samples = (state.retention.insideWindow || []).map((item) =>
+          `${item.key}: ${item.insideWindow}/${item.listed} versions inside ${item.retentionDays}d`
+        ).join("\n");
+        $("source-side").className = "side source";
+        $("backup-side").className = "side backup";
+        $("source-side").innerHTML = `<h3>Source lifecycle<small>${esc(s?.source?.region || "")}</small></h3><div class="rules">${rules(state.retention.source)}</div><div class="hash" style="margin-top:0.7rem">${esc(samples)}</div>`;
+        $("backup-side").innerHTML = `<h3>Backup lifecycle<small>${esc(s?.replica?.region || "")}</small></h3><div class="rules">${rules(state.retention.replica)}</div><p class="prove" style="margin-top:0.8rem">${state.retention.rulesMatch ? "Rules match the 90 / 30 / 1 day windows." : "Rules do not match the requirements."}</p>`;
+        return;
+      }
+      renderSide($("source-side"), "Source bucket", s?.source ? s.source.region : "", state.view?.source);
+      renderSide($("backup-side"), "Backup bucket", s?.replica ? s.replica.region : "", state.view?.replica);
+    }
+
+    function resetSteps() {
+      const steps = {
+        copy: [
+          { id: "write", n: "1", label: "Write the file to the source bucket" },
+          { id: "wait", n: "2", label: "Wait until the backup bucket has it" },
+          { id: "match", n: "3", label: "Confirm both buckets have the same bytes" },
+        ],
+        overwrite: [
+          { id: "seed", n: "1", label: "Make sure the original file exists" },
+          { id: "overwrite", n: "2", label: "Overwrite it with different text" },
+          { id: "kept", n: "3", label: "Confirm the older version is still listed" },
+          { id: "restore", n: "4", label: "Restore the older version" },
+          { id: "match", n: "5", label: "Confirm the current file is the original again within 15 minutes" },
+        ],
+        delete: [
+          { id: "seed", n: "1", label: "Read critical/sample.txt and record its checksum" },
+          { id: "delete", n: "2", label: "Delete the current object (S3 writes a delete marker)" },
+          { id: "hidden", n: "3", label: "Confirm a normal read no longer returns the file" },
+          { id: "restore", n: "4", label: "Restore the previous version" },
+          { id: "match", n: "5", label: "Confirm the application read matches and finished within 15 minutes" },
+        ],
+        bulk: [
+          { id: "seed", n: "1", label: "Write 10 files under app-data/bulk-scenario/" },
+          { id: "delete", n: "2", label: "Delete the whole prefix" },
+          { id: "hidden", n: "3", label: "Confirm those keys are hidden by delete markers" },
+          { id: "restore", n: "4", label: "Restore every key from its previous version" },
+          { id: "match", n: "5", label: "Confirm all 10 files are readable again within the 1-hour RTO" },
+        ],
+        temp: [
+          { id: "write", n: "1", label: "Write a scratch file under temp/" },
+          { id: "wait", n: "2", label: "Wait a few seconds and refresh the backup bucket" },
+          { id: "absent", n: "3", label: "Confirm the backup bucket does not have it" },
+        ],
+        retention: [
+          { id: "rules", n: "1", label: "Read lifecycle rules on source and backup" },
+          { id: "match", n: "2", label: "Confirm 90 / 30 / 1 day windows" },
+          { id: "listed", n: "3", label: "Confirm listed sample versions are still inside the window" },
+        ],
+      };
+      state.steps = steps[state.scene];
+    }
+
+    async function loadView() {
+      const scene = sceneDef();
+      if (state.scene === "bulk") {
+        state.prefix = await api(`/api/prefix?prefix=${encodeURIComponent(scene.prefix)}&count=${scene.count}`);
+      } else if (state.scene === "retention") {
+        state.retention = await api("/api/retention");
+      } else {
+        state.view = await api(`/api/compare?key=${encodeURIComponent(scene.key)}`);
+      }
+      renderView();
+      return state.view;
+    }
+
+    async function putText(key, body) {
+      return api(`/api/files?key=${encodeURIComponent(key)}`, {
+        method: "PUT",
+        headers: { "content-type": "text/plain; charset=utf-8" },
+        body,
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function startClock() {
+      state.startedAt = Date.now();
+      clearInterval(state.clock);
+      state.clock = setInterval(() => {
+        const el = $("clock");
+        if (el) el.textContent = formatElapsed(Date.now() - state.startedAt);
+      }, 250);
+    }
+
+    function stopClock() {
+      clearInterval(state.clock);
+      state.clock = null;
+    }
+
+    async function waitFor(test, labelId, timeoutMs, tick) {
+      const started = Date.now();
+      while (Date.now() - started < timeoutMs) {
+        const view = await loadView();
+        const result = test(view);
+        const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+        setStep(labelId, result.done ? result.status : "wait", result.done ? result.detail : `${tick} (${elapsed}s)`);
+        if (result.done) return result;
+        await sleep(2500);
+      }
+      throw new Error("Timed out waiting for the backup bucket");
+    }
+
+    async function runScene() {
+      if (state.busy) return;
+      state.busy = true;
+      banner("");
+      startClock();
+      $("run").disabled = true;
+      try {
+        const scene = sceneDef();
+        const original = $("original")?.value ?? scene.original ?? "";
+        const overwrite = $("overwrite")?.value || scene.overwrite;
+        scene.original = original;
+        scene.overwrite = overwrite;
+
+        if (state.scene === "copy") {
+          setStep("write", "wait", "Uploading to the source bucket…");
+          await putText(scene.key, original);
+          const afterWrite = await loadView();
+          setStep("write", "pass", `Wrote source version ${shortId(afterWrite.source.current?.versionId)}`);
+          const waited = await waitFor((view) => ({
+            done: view.replica.present && view.sameBytes,
+            status: "pass",
+            detail: view.sameBytes ? "Backup bucket has the same SHA-256" : "Backup object appeared but bytes differ",
+          }), "wait", 120000, "Waiting for replication to us-west-2");
+          setStep("match", waited.status, waited.detail);
+        }
+
+        if (state.scene === "overwrite") {
+          setStep("seed", "wait", "Writing the original file…");
+          await putText(scene.key, original);
+          let view = await loadView();
+          state.knownGood = view.source.current?.sha256;
+          setStep("seed", "pass", `Original sha256 ${state.knownGood.slice(0, 16)}…`);
+
+          setStep("overwrite", "wait", "Writing the new body onto the same key…");
+          await putText(scene.key, overwrite);
+          view = await loadView();
+          const nowBad = view.source.current?.sha256 !== state.knownGood;
+          setStep("overwrite", nowBad ? "pass" : "fail", nowBad ? "Current object is the overwrite" : "Current object did not change");
+
+          const older = (view.source.versions || []).filter((item) => !item.isLatest);
+          setStep("kept", older.length ? "pass" : "fail", older.length
+            ? `${older.length} older version${older.length === 1 ? "" : "s"} still listed`
+            : "No older version found — versioning did not keep the original");
+
+          setStep("restore", "wait", "Copying the previous version back onto the key…");
+          await api("/api/restore-previous", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ key: scene.key }),
+          });
+          view = await loadView();
+          setStep("restore", "pass", `Restored. Current version ${shortId(view.source.current?.versionId)}`);
+          const matched = view.source.current?.sha256 === state.knownGood;
+          setStep("match", matched ? "pass" : "fail", matched
+            ? "Current file matches the original bytes (15 min RTO)"
+            : "Current file does not match the original");
+        }
+
+        if (state.scene === "delete") {
+          const key = scene.key;
+          setStep("seed", "wait", "Reading the current object…");
+          let view = await loadView();
+          if (!view.source.current) {
+            await putText(key, original || scene.original);
+            view = await loadView();
+          }
+          state.knownGood = view.source.current.sha256;
+          setStep("seed", "pass", `Known-good sha256 ${state.knownGood.slice(0, 16)}…`);
+
+          setStep("delete", "wait", "Deleting the current object…");
+          await api("/api/files", {
+            method: "DELETE",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ key }),
+          });
+          view = await loadView();
+          const marker = (view.source.deleteMarkers || []).some((item) => item.isLatest);
+          setStep("delete", marker ? "pass" : "fail", marker ? "Delete marker is latest" : "No delete marker");
+
+          setStep("hidden", view.source.removed && !view.source.current ? "pass" : "fail",
+            view.source.removed ? "A normal read no longer returns the file" : "The file is still current");
+
+          const started = Date.now();
+          setStep("restore", "wait", "Restoring the previous version…");
+          await api("/api/restore-previous", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ key }),
+          });
+          view = await loadView();
+          const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+          setStep("restore", "pass", `Restored in ${elapsed}s`);
+          const matched = view.source.current?.sha256 === state.knownGood;
+          const within = Number(elapsed) <= 15 * 60;
+          setStep("match", matched && within ? "pass" : "fail", matched
+            ? `Application read matches known-good (${elapsed}s / 15 min RTO)`
+            : "Application read does not match the original");
+        }
+
+        if (state.scene === "bulk") {
+          const prefix = scene.prefix;
+          const count = scene.count;
+          const bulk = (action) => api("/api/bulk", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ action, prefix, count }),
+          });
+          setStep("seed", "wait", `Writing ${count} files…`);
+          await bulk("seed");
+          await loadView();
+          setStep("seed", state.prefix.readable === count ? "pass" : "fail", `${state.prefix.readable}/${count} files readable`);
+
+          setStep("delete", "wait", "Deleting the prefix…");
+          await bulk("delete");
+          await loadView();
+          setStep("delete", "pass", `Deleted ${count} keys`);
+          setStep("hidden", state.prefix.removed === count && state.prefix.readable === 0 ? "pass" : "fail",
+            `${state.prefix.removed} delete markers, ${state.prefix.readable} still readable`);
+
+          const started = Date.now();
+          setStep("restore", "wait", "Restoring every key…");
+          await bulk("restore");
+          await loadView();
+          const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+          setStep("restore", "pass", `Restored in ${elapsed}s`);
+          const ok = state.prefix.readable === count && state.prefix.removed === 0;
+          const within = Number(elapsed) <= 60 * 60;
+          setStep("match", ok && within ? "pass" : "fail", ok
+            ? `All ${count} files readable again (${elapsed}s / 1 hour RTO)`
+            : `${state.prefix.readable}/${count} readable after restore`);
+        }
+
+        if (state.scene === "retention") {
+          setStep("rules", "wait", "Reading bucket lifecycle…");
+          await loadView();
+          setStep("rules", "pass", "Loaded rules from source and backup");
+          setStep("match", state.retention.rulesMatch ? "pass" : "fail", state.retention.rulesMatch
+            ? "Both buckets keep critical/ 90d, app-data/ 30d, temp/ 1d"
+            : "Lifecycle rules do not match the recovery requirements");
+          const listed = (state.retention.insideWindow || []).every((item) => item.listed > 0 && item.insideWindow === item.listed);
+          setStep("listed", listed ? "pass" : "fail", listed
+            ? "Listed sample versions are all inside the retention window"
+            : "A listed version is outside the window, or no versions were found");
+        }
+
+        if (state.scene === "temp") {
+          setStep("write", "wait", "Uploading to temp/ on the source bucket…");
+          await putText(scene.key, original);
+          const afterWrite = await loadView();
+          setStep("write", afterWrite.source.present ? "pass" : "fail", "Source bucket has the scratch file");
+          setStep("wait", "wait", "Checking that the backup bucket stays empty for this key…");
+          await sleep(4000);
+          const later = await loadView();
+          setStep("wait", "pass", "Checked backup bucket");
+          setStep("absent", later.replica.present ? "fail" : "pass", later.replica.present
+            ? "Unexpected: temp/ object appeared on the backup bucket"
+            : "Backup bucket does not have this key");
+        }
+      } catch (err) {
+        banner(err.message);
+        state.steps.filter((step) => !step.status).forEach((step) => {
+          step.status = "fail";
+          step.detail = err.message;
+        });
+        renderSteps();
+      } finally {
+        state.busy = false;
+        stopClock();
+        renderSteps();
+        await loadView().catch(() => undefined);
+      }
+    }
+
+    function filteredFiles() {
+      return state.files.filter((file) => state.fileFilter === "all" || file.folderId === state.fileFilter);
+    }
+
+    function renderFileFilters() {
+      const folders = [{ id: "all", name: "All folders" }, ...(state.status?.folders || [])];
+      $("file-filters").innerHTML = folders.map((folder) => `
+        <button type="button" data-filter="${esc(folder.id)}" class="${state.fileFilter === folder.id ? "active" : ""}">${esc(folder.name || folder.id)}</button>
+      `).join("") + `<button type="button" id="reload-files">Reload</button>`;
+      $("file-filters").querySelectorAll("[data-filter]").forEach((btn) => {
+        btn.onclick = () => {
+          state.fileFilter = btn.dataset.filter;
+          renderFiles();
+        };
+      });
+      $("reload-files").onclick = () => loadFiles();
+    }
+
+    function renderFiles() {
+      renderFileFilters();
+      const files = filteredFiles();
+      if (!files.length) {
+        $("file-list").innerHTML = `<p class="empty">No files in this folder yet.</p>`;
+        return;
+      }
+      $("file-list").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Folder</th>
+              <th>State</th>
+              <th>Copies</th>
+              <th>Replica</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${files.map((file) => `
+              <tr class="file-row${state.selectedKey === file.key ? " selected" : ""}" data-key="${esc(file.key)}">
+                <td>
+                  <strong>${esc(file.name)}</strong><br>
+                  <span class="hash">${esc(formatWhen(file.lastModified))}${file.size != null ? ` · ${formatBytes(file.size)}` : ""}</span>
+                </td>
+                <td>${esc(file.folderName)}</td>
+                <td>${file.removed ? `<span class="stamp fail">Deleted</span>` : `<span class="stamp pass">Current</span>`}</td>
+                <td>${esc(String(file.copies))}</td>
+                <td>${file.backedUp ? (file.secondCopy ? `<span class="stamp source">Present</span>` : `<span class="stamp wait">Waiting</span>`) : `<span class="stamp missing">Skipped</span>`}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+      $("file-list").querySelectorAll("[data-key]").forEach((row) => {
+        row.onclick = () => openFile(row.dataset.key);
+      });
+    }
+
+    function renderFileDetail() {
+      const file = state.files.find((item) => item.key === state.selectedKey);
+      const history = state.history;
+      if (!file || !history) {
+        $("file-detail").innerHTML = `<h3>Choose a file</h3><p class="prove">Open a row to see versions, the replica copy, and restore options.</p>`;
+        return;
+      }
+      const preview = state.preview?.text
+        ? `<div class="body">${esc(state.preview.text)}</div><div class="hash">sha256 ${esc((state.preview.sha256 || "").slice(0, 16))}…</div>`
+        : `<p class="prove">${file.removed ? "This key is hidden by a delete marker." : "No text preview for this version."}</p>`;
+      $("file-detail").innerHTML = `
+        <h3>${esc(file.name)}</h3>
+        <p class="meta-line"><code>${esc(file.key)}</code></p>
+        <div class="chips" style="margin-bottom:0.7rem">
+          <span class="stamp ${file.removed ? "fail" : "pass"}">${file.removed ? "Deleted" : "Current"}</span>
+          <span class="stamp missing">${esc(String(file.retentionDays))}d retention</span>
+          <span class="stamp ${file.secondCopy ? "source" : "missing"}">${file.backedUp ? (file.secondCopy ? "Replica has a copy" : "No replica yet") : "Not replicated"}</span>
+        </div>
+        ${preview}
+        <div class="actions">
+          <button type="button" class="primary" id="restore-prev" ${file.copies < 2 && !file.removed ? "disabled" : ""}>Restore previous</button>
+          <a class="mono" href="/api/download?key=${encodeURIComponent(file.key)}">Download current</a>
+        </div>
+        <div class="version-list">
+          ${(history.deleteMarkers || []).filter((item) => item.isLatest).map((item) => `
+            <div class="version-item">
+              <div>
+                <strong>Delete marker</strong>
+                <div class="hash">${esc(shortId(item.versionId))} · ${esc(formatWhen(item.lastModified))}</div>
+              </div>
+            </div>
+          `).join("")}
+          ${(history.versions || []).map((version) => `
+            <div class="version-item">
+              <div>
+                <strong>${version.isLatest ? "Current version" : "Older version"}</strong>
+                <div class="hash">${esc(shortId(version.versionId))} · ${esc(formatWhen(version.lastModified))} · ${esc(formatBytes(version.size))}</div>
+              </div>
+              ${version.isLatest ? "" : `<button type="button" data-restore="${esc(version.versionId)}">Bring back</button>`}
+            </div>
+          `).join("")}
+        </div>
+      `;
+      const prev = $("restore-prev");
+      if (prev) {
+        prev.onclick = async () => {
+          try {
+            await api("/api/restore-previous", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ key: file.key }),
+            });
+            banner(`Restored the previous version of ${file.name}`, true);
+            await Promise.all([loadFiles(), openFile(file.key)]);
+          } catch (err) {
+            banner(err.message);
+          }
+        };
+      }
+      $("file-detail").querySelectorAll("[data-restore]").forEach((btn) => {
+        btn.onclick = async () => {
+          try {
+            await api("/api/restore", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ key: file.key, versionId: btn.dataset.restore }),
+            });
+            banner(`Brought back a version of ${file.name}`, true);
+            await Promise.all([loadFiles(), openFile(file.key)]);
+          } catch (err) {
+            banner(err.message);
+          }
+        };
+      });
+    }
+
+    async function openFile(key) {
+      state.selectedKey = key;
+      renderFiles();
+      $("file-detail").innerHTML = `<h3>Loading…</h3><p class="prove">Reading versions for this key.</p>`;
+      try {
+        state.history = await api(`/api/history?key=${encodeURIComponent(key)}`);
+        const file = state.files.find((item) => item.key === key);
+        state.preview = file && !file.removed
+          ? await api(`/api/preview?key=${encodeURIComponent(key)}`).catch(() => null)
+          : null;
+        renderFileDetail();
+      } catch (err) {
+        banner(err.message);
+        $("file-detail").innerHTML = `<h3>Could not read this file</h3><p class="prove">${esc(err.message)}</p>`;
+      }
+    }
+
+    async function loadFiles() {
+      const data = await api("/api/files");
+      state.files = data.files || [];
+      renderFiles();
+      if (state.selectedKey) renderFileDetail();
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      document.querySelectorAll("[data-mode]").forEach((btn) => btn.classList.toggle("active", btn.dataset.mode === mode));
+      $("scenario-app").classList.toggle("hidden", mode !== "scenarios");
+      $("files-app").classList.toggle("hidden", mode !== "files");
+      $("overview").classList.toggle("hidden", mode !== "scenarios");
+    }
+
+    document.querySelectorAll("[data-mode]").forEach((btn) => {
+      btn.onclick = async () => {
+        if (state.busy) return;
+        setMode(btn.dataset.mode);
+        if (state.mode === "files") {
+          try {
+            await loadFiles();
+          } catch (err) {
+            banner(err.message);
+          }
+        }
+      };
+    });
+
+    document.querySelectorAll("[data-scene]").forEach((btn) => {
+      btn.onclick = async () => {
+        if (state.busy) return;
+        state.scene = btn.dataset.scene;
+        document.querySelectorAll("[data-scene]").forEach((item) => item.classList.toggle("active", item === btn));
+        resetSteps();
+        renderSteps();
+        await loadView().catch((err) => banner(err.message));
+      };
+    });
+
+    (async () => {
+      try {
+        state.status = await api("/api/status");
+        renderMeta();
+        renderOverview();
+        resetSteps();
+        renderSteps();
+        if (state.status.ready) await loadView();
+        else banner(state.status.error);
+      } catch (err) {
+        renderOverview();
+        resetSteps();
+        renderSteps();
+        banner(err.message);
+      }
+    })();
+  </script>
+</body>
+</html>

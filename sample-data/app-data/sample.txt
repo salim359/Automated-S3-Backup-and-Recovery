@@ -1,0 +1,2 @@
+APP-DATA v1 — weekly application upload.
+Overwrite this key in recovery tests to verify a prior version is kept.

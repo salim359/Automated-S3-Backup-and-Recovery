@@ -1,0 +1,30 @@
+{
+  "name": "backup-sys",
+  "version": "0.1.0",
+  "bin": {
+    "backup-sys": "bin/backup-sys.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "ui": "ts-node --prefer-ts-exts ui/server.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^24.10.1",
+    "aws-cdk": "2.1100.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.1156.0",
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/client-sts": "^3.1156.0",
+    "aws-cdk-lib": "2.232.1",
+    "constructs": "^10.0.0"
+  }
+}

@@ -1,0 +1,2 @@
+CRITICAL v1 — customer record CR-1001.
+This file must remain recoverable after overwrite or delete.
